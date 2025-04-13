@@ -306,7 +306,12 @@ impl<C: ClientContext> ChainClientListener<C> {
         }
         debug!("Processing inbox");
         match self.client.process_inbox_without_prepare().await {
-            Err(ChainClientError::CannotFindKeyForChain(_)) => {}
+            Err(ChainClientError::CannotFindKeyForChain(chain_id)) => {
+                warn!(
+                    ?chain_id,
+                    "Cannot find key for chain when processing an inbox"
+                );
+            }
             Err(error) => warn!(%error, "Failed to process inbox."),
             Ok((certs, None)) => info!("Done processing inbox. {} blocks created.", certs.len()),
             Ok((certs, Some(new_timeout))) => {

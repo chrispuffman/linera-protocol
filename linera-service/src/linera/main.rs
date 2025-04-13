@@ -139,6 +139,7 @@ impl Runnable for Job {
                 balance,
             } => {
                 let new_owner = owner.unwrap_or_else(|| signer.generate_new().into());
+                signer.persist().await?;
                 let mut context = ClientContext::new(
                     storage.clone(),
                     options.inner.clone(),
@@ -843,9 +844,10 @@ impl Runnable for Job {
                 health_check_endpoints,
                 wrap_up_max_in_flight,
             } => {
-                let pub_keys = std::iter::repeat_with(|| signer.generate_new())
+                let pub_keys: Vec<_> = std::iter::repeat_with(|| signer.generate_new())
                     .take(num_chains)
                     .collect();
+                signer.persist().await?;
 
                 let mut context = ClientContext::new(
                     storage.clone(),
@@ -1299,7 +1301,7 @@ impl Runnable for Job {
                 ..
             }) => {
                 let start_time = Instant::now();
-                let public_key = signer.generate_new();
+                let public_key = signer.mutate(|s| s.generate_new()).await?;
                 let mut context = ClientContext::new(
                     storage.clone(),
                     options.inner.clone(),
@@ -1350,7 +1352,7 @@ impl Runnable for Job {
                 set_default,
             }) => {
                 let start_time = Instant::now();
-                let public_key = signer.generate_new();
+                let public_key = signer.mutate(|s| s.generate_new()).await?;
                 let mut context = ClientContext::new(
                     storage.clone(),
                     options.inner.clone(),
@@ -2015,7 +2017,7 @@ async fn run(options: &ClientOptions) -> Result<i32, Error> {
             let mut wallet: linera_client::config::WalletState<persistent::File<Wallet>> =
                 options.wallet().await?;
             let mut signer = options.signer().await?;
-            let public_key = signer.generate_new();
+            let public_key = signer.mutate(|s| s.generate_new()).await?;
             let owner = AccountOwner::from(public_key);
             wallet
                 .mutate(|w| w.add_unassigned_key_pair(public_key))
