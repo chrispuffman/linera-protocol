@@ -202,7 +202,8 @@ impl<S: Persist<Target = InMemSigner>> Persist for SignerState<S> {
     }
 
     async fn persist(&mut self) -> Result<(), S::Error> {
-        tracing::trace!("Persisted user chains");
+        self.signer.persist().await?;
+        tracing::trace!("Persisted signer struct");
         Ok(())
     }
 
